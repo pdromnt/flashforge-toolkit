@@ -51,7 +51,7 @@ $ yarn build
 
 ### Extra Info
 
-The code was made ugly on purpose so its easier to understand all it does. Everything in the app depends on the backend (you don't need to set IP addresses or anything, really, in there).
+The code was made ugly on purpose so its easier to understand all it does. Everything in the app depends on the backend (you don't need to set IP addresses or anything, really, in the client).
 
 **Warning**: Running it in real time with `yarn dev` will not deploy it to the backend (aka prod), so for any changes you need to deploy, run `yarn build`. The backend automatically picks it up from the front-end's `/dist` folder. No need to copy-paste.
 
