@@ -1,6 +1,8 @@
 # Flashforge Toolkit
 
-An small toolkit for Flashforge printers that contains a NestJS backend serving data and a static Vue3 front-end (showing that data and the printer's webcam) in a single package.
+An small toolkit for Flashforge printers that contains a NestJS backend serving data and a static Vue3 front-end (showing that data and the printer's webcam) in a single package.  
+
+FYI, this project is in dire need of a refactor and may be buggy.
 
 ## Back-End Instructions
 
