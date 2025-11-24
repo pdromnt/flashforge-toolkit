@@ -50,7 +50,7 @@ $ npm run build
 
 Remember to check the .env file in the server for everything. You don't need to set IP adresses or anything in the client, unless you change the server's port or run it on another IP other than local, then you need to change in the client and rebuild.
 
-**Warning**: Running the frontend in real time with `npm run dev` will not deploy it to the backend (aka prod), so for any changes you need to re-build it, run `npm run build`. The backend automatically picks it up from the front-end's `/dist` folder. No need to copy-paste.
+**Warning**: Running the frontend in real time with `npm run dev` will not deploy it to the backend, so for any changes you need to re-build it, run `npm run build`. The backend automatically picks it up from the front-end's `/dist` folder. No need to copy-paste.
 
 ### License
 
