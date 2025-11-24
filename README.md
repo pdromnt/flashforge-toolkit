@@ -9,25 +9,22 @@ FYI, this project is in dire need of a refactor and may be buggy.
 ### Installation
 
 ```bash
-$ yarn install
+$ npm i
 ```
 
 ### Running the app
 
 ```bash
 # development
-$ yarn run start
+$ npm run dev
 
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+# build
+$ npm run build
 ```
 
 ### Extra Info
 
-Inside the `app.service.ts` you can find where to put your printer's IP address (make sure it's a static IP set in your router!), that's all you need in order to start seeing data from your printer in the front-end.
+Inside the `.env` you can find where to put your printer's IP address (make sure it's a static IP set in your router!), that's all you need in order to start seeing data from your printer in the front-end.
 
 ## Front-End Instructions
 
@@ -36,26 +33,26 @@ Inside the `app.service.ts` you can find where to put your printer's IP address 
 **First** go inside the the flashforge-toolkit-client folder (or open it with another VSCode window), then run the commands below.
 
 ```bash
-$ yarn install
+$ npm i
 ```
 
 ### Running the app
 
 ```bash
-$ yarn dev
+$ npm run dev
 ```
 
 ### Building the app
 
 ```bash
-$ yarn build
+$ npm run build
 ```
 
 ### Extra Info
 
-The code was made ugly on purpose so its easier to understand all it does. Everything in the app depends on the backend (you don't need to set IP addresses or anything, really, in the client).
+Remember to check the .env file in the server for everything. You don't need to set IP adresses or anything in the client, unless you change the server's port or run it on another IP other than local.
 
-**Warning**: Running it in real time with `yarn dev` will not deploy it to the backend (aka prod), so for any changes you need to deploy, run `yarn build`. The backend automatically picks it up from the front-end's `/dist` folder. No need to copy-paste.
+**Warning**: Running the frontend in real time with `npm run dev` will not deploy it to the backend (aka prod), so for any changes you need to re-build it, run `npm run build`. The backend automatically picks it up from the front-end's `/dist` folder. No need to copy-paste.
 
 ### License
 
