@@ -28,7 +28,7 @@ Inside the `.env` you can find where to put your printer's IP address (make sure
 
 ### Installation
 
-**First** go inside the the flashforge-toolkit-client folder (or open it with another VSCode window), then run the commands below.
+**First** go inside the the client folder (or open it with another VSCode window), then run the commands below.
 
 ```bash
 $ npm i
