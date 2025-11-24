@@ -34,7 +34,7 @@ onMounted(() => {
     <img :src="flashForgeLogo" />
 
     <br />
-    <p class="subtitle">Flashforge Web Monitor</p>
+    <p class="subtitle">Flashforge Dashboard</p>
   </div>
 
   <div class="wrapper">

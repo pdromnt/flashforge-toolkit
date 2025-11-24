@@ -1,4 +1,4 @@
-export interface IPrinterData {
+export type PrinterData = {
   printerConnection: string;
   printerStatus: string;
   printProgress: number;
