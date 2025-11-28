@@ -1,113 +1,202 @@
-import { once } from 'events';
 import net from 'net';
-import * as fs from 'fs'
+import fs from 'fs';
+import crc from 'crc';
 
-const BLOCK_SIZE = 4096;
-const HEADER_SIZE = 16;
-
-const CRC32_TABLE = (() => {
-    const table = new Uint32Array(256);
-    for (let i = 0; i < 256; i++) {
-        let c = i;
-        for (let j = 0; j < 8; j++) {
-            c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-        }
-        table[i] = c >>> 0;
-    }
-    return table;
-})();
-
-function crc32(buf) {
-    let crc = 0xFFFFFFFF;
-    for (let i = 0; i < buf.length; i++) {
-        crc = CRC32_TABLE[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
-    }
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-}
-
-function writeHeader(counter, dataLen, dataCrc) {
-    const header = Buffer.alloc(HEADER_SIZE);
-    header[0] = 0x5a;
-    header[1] = 0x5a;
-    header[2] = 0xa5;
-    header[3] = 0xa5;
-    header.writeUInt32BE(counter >>> 0, 4);
-    header.writeUInt32BE(dataLen >>> 0, 8);
-    header.writeUInt32BE(dataCrc >>> 0, 12);
-    return header;
-}
-
-async function sendCmd(socket, cmd) {
-    const line = cmd.endsWith('\r\n') ? cmd : `${cmd}\r\n`;
-    const buf = Buffer.from(line, 'utf8');
-    const ok = socket.write(buf);
-    if (!ok) await once(socket, 'drain');
-}
-
-async function sendPacket(socket, header, payload) {
-    const packet = Buffer.concat([header, payload]);
-    const ok = socket.write(packet);
-    if (!ok) await once(socket, 'drain');
-}
-
-async function uploadFileToPrinter({ host, port, filename, filePath, model = '5m', startPrint = false }) {
-  const stat = await fs.promises.stat(filePath);
-  const fileSize = stat.size;
-
-  const socket = net.createConnection({ host, port });
-  socket.setNoDelay(true);
-  socket.setTimeout(10 * 60 * 1000); // 10 min timeout
-
-  socket.on('data', (data) => console.log('[Printer]', data.toString().trim()));
-  socket.on('error', (err) => console.error('[Socket error]', err.message));
-
-  await once(socket, 'connect');
-  console.log(`Connected to ${host}:${port}`);
-
-  try {
-    // Handshake
-    await sendCmd(socket, '~M601 S1');
-    await sendCmd(socket, model === 'm5' ? '~M640' : '~M650');
-    await sendCmd(socket, '~M119');
-
-    // Begin upload
-    await sendCmd(socket, `~M28 ${fileSize} 0:/user/${filename}`);
-
-    // Stream file in packets
-    const stream = fs.createReadStream(filePath, { highWaterMark: BLOCK_SIZE });
-    let counter = 0;
-    for await (const chunk of stream) {
-      const dataLen = chunk.length;
-      const crc = crc32(chunk);
-      const header = writeHeader(counter, dataLen, crc);
-
-      let payload = chunk;
-      if (dataLen < BLOCK_SIZE) {
-        const padded = Buffer.alloc(BLOCK_SIZE);
-        chunk.copy(padded, 0);
-        payload = padded;
-      }
-
-      await sendPacket(socket, header, payload);
-      counter++;
-    }
-    console.log(`Data phase complete (${counter} packets).`);
-
-    // Finalize
-    await sendCmd(socket, '~M29');
-
-    // Optional start
-    if (startPrint) {
-      await sendCmd(socket, `~M23 0:/user/${filename}`);
-    }
-
-    socket.end();
-    await once(socket, 'close');
-    console.log('Upload complete, socket closed.');
-  } catch (err) {
-    socket.destroy();
-    throw err;
+class SerialMessage {
+  content: any;
+  type: any;
+  constructor(content, type) {
+    this.content = content; // string for "command", object for "data" (see below)
+    this.type = type;       // "command" | "data"
   }
 }
 
-export { uploadFileToPrinter };
+class TCPConsole {
+  host: any;
+  port: any;
+  queue: any[];
+  client: net.Socket;
+  readTimeoutMs: number;
+  writeTimeoutMs: number;
+  _buffer: string;
+  constructor(host, port, { readTimeoutMs = 10 * 60 * 1000, writeTimeoutMs = 10 * 60 * 1000 } = {}) {
+    this.host = host;
+    this.port = port;
+    this.queue = [];
+    this.client = new net.Socket();
+    this.readTimeoutMs = readTimeoutMs;
+    this.writeTimeoutMs = writeTimeoutMs;
+    this._buffer = ''; // accumulate textual responses
+  }
+
+  enqueueCmd(msg) {
+    this.queue.push(msg);
+  }
+
+  async runQueue() {
+    await this._connect();
+    try {
+      for (const msg of this.queue) {
+        if (msg.type === 'command') {
+          await this._sendCommandAndWait(msg.content);
+        } else if (msg.type === 'data') {
+          // msg.content is { filePath, packetSize, progressCb }
+          await this._sendPacketizedData(msg.content);
+        }
+      }
+      this.client.end();
+      return true;
+    } catch (err) {
+      this.client.destroy();
+      throw err;
+    }
+  }
+
+  _connect() {
+    return new Promise<void>((resolve, reject) => {
+      this.client.setTimeout(this.readTimeoutMs);
+      this.client.once('timeout', () => reject(new Error('Socket read timeout')));
+      this.client.once('error', reject);
+      this.client.connect(this.port, this.host, () => {
+        // Accumulate textual replies for command handling
+        this.client.on('data', (data) => {
+          this._buffer += data.toString('utf8');
+        });
+        resolve();
+      });
+    });
+  }
+
+  _sendCommandAndWait(cmd, { expectRegex = /ok|Ready|READY|Start|Status|MachineStatus|Done|Finish/i, timeoutMs = 30000 } = {}) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`Command timeout: ${cmd.trim()}`)), timeoutMs);
+
+      // Send command
+      this.client.write(cmd, (err) => {
+        if (err) {
+          clearTimeout(timer);
+          reject(err);
+          return;
+        }
+      });
+
+      // Poll buffer for an expected acknowledgment line
+      const poll = () => {
+        if (expectRegex.test(this._buffer)) {
+          clearTimeout(timer);
+          const reply = this._buffer;
+          this._buffer = ''; // reset after consuming
+          resolve(reply);
+        } else {
+          setImmediate(poll);
+        }
+      };
+      poll();
+    });
+  }
+
+  async _sendPacketizedData({ filePath, packetSize = 4096, progressCb }) {
+    return new Promise<void>(async (resolve, reject) => {
+      const fd = fs.openSync(filePath, 'r');
+      const stat = fs.fstatSync(fd);
+      const totalBytes = stat.size;
+
+      try {
+        let counter = 0;
+        let remaining = totalBytes;
+        const tmpBuf = Buffer.alloc(packetSize);
+
+        while (remaining > 0) {
+          const toRead = Math.min(packetSize, remaining);
+          const bytesRead = fs.readSync(fd, tmpBuf, 0, toRead, null);
+          if (bytesRead <= 0) break;
+
+          const chunk = tmpBuf.slice(0, bytesRead);
+          const packet = buildPacket(counter, chunk, packetSize);
+
+          if (!this.client.write(packet)) {
+            // Wait for drain once, then continue
+            await new Promise((resolve) => this.client.once('drain', resolve));
+          }
+
+          counter++;
+          remaining -= bytesRead;
+
+          if (typeof progressCb === 'function') {
+            progressCb(totalBytes - remaining, totalBytes);
+          }
+        }
+
+        fs.closeSync(fd);
+        resolve();
+      } catch (err) {
+        try { fs.closeSync(fd); } catch (_) { }
+        reject(err);
+      }
+    });
+  }
+}
+
+// Build packet with 16-byte header + padded payload
+function buildPacket(counter, dataChunk, packetSize) {
+  // 16-byte header layout:
+  // [0..3]   Magic: 0x5A 0x5A 0xA5 0xA5 (big-endian 32-bit value 0x5A5AA5A5)
+  // [4..7]   Counter: big-endian uint32
+  // [8..11]  Data length: big-endian uint32 (actual chunk length)
+  // [12..15] CRC32 of actual chunk (without padding), big-endian uint32
+
+  const header = Buffer.alloc(16);
+  header.writeUInt32BE(0x5a5aa5a5, 0);
+  header.writeUInt32BE(counter >>> 0, 4);
+  header.writeUInt32BE(dataChunk.length >>> 0, 8);
+
+  const crcVal = (crc.crc32(dataChunk) >>> 0);
+  header.writeUInt32BE(crcVal, 12);
+
+  // Pad payload to packetSize with 0x00; CRC is for unpadded chunk
+  const payload = Buffer.alloc(packetSize);
+  dataChunk.copy(payload, 0);
+
+  return Buffer.concat([header, payload], header.length + payload.length);
+}
+
+// Core upload logic
+async function uploadGcode({
+  host,
+  port,
+  localFilePath,
+  remoteFileName,
+  startPrint,
+  onProgress, // function(sentBytes, totalBytes)
+}) {
+  const console = new TCPConsole(host, port);
+
+  // 1) Queue setup commands
+  console.enqueueCmd(new SerialMessage("~M601 S1\r\n", "command")); // control enable
+  console.enqueueCmd(new SerialMessage("~M650\r\n", "command"));    // connect (5M)
+  console.enqueueCmd(new SerialMessage("~M119\r\n", "command"));    // status
+
+  // 2) File upload command with exact size (original file size, not padded)
+  const fileSize = fs.statSync(localFilePath).size;
+  console.enqueueCmd(new SerialMessage(`~M28 ${fileSize} 0:/user/${remoteFileName}\r\n`, "command"));
+
+  // 3) Packetized data stream
+  console.enqueueCmd(new SerialMessage({
+    filePath: localFilePath,
+    packetSize: 4096,
+    progressCb: onProgress,
+  }, "data"));
+
+  // 4) Save file
+  console.enqueueCmd(new SerialMessage("~M29\r\n", "command"));
+
+  // 5) Optional start print
+  if (startPrint) {
+    console.enqueueCmd(new SerialMessage(`~M23 0:/user/${remoteFileName}\r\n`, "command"));
+  }
+
+  // 6) Run the queue
+  return console.runQueue();
+}
+
+export { uploadGcode };
