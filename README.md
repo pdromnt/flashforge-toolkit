@@ -1,10 +1,10 @@
 # Flashforge Dashboard (Previously Flashforge Toolkit)
 
-An small dashboard for older Flashforge printers that contains a NodeJS server fetching printer data and serving to the client and a static Vue3 client (served statically by the server) that shows "realtime" printer statuses, the printer's webcam and allows file uploading in a single package.  
+An intuitive dashboard for older Flashforge printers, featuring a NodeJS server that retrieves printer data and delivers it to a static Vue3 client (served statically by the server) that displays “real-time” printer statuses, the printer’s webcam, and facilitates file uploads, all in a single package.    
 
 ## Server Instructions
 
-**First** go inside the the `server` folder (or open it with another VSCode window), then run the commands below.
+**First** go inside the `server` folder (or open it with another VSCode window), then run the commands below.
 
 ### Installation
 
@@ -12,7 +12,7 @@ An small dashboard for older Flashforge printers that contains a NodeJS server f
 $ npm i
 ```
 
-### Running the app
+### Running the server
 
 ```bash
 # development
@@ -25,7 +25,7 @@ Inside the `.env` you can find where to put your printer's IP address (make sure
 
 ## Client Instructions
 
-**First** go inside the the `client` folder (or open it with another VSCode window), then run the commands below.
+**First** go inside the `client` folder (or open it with another VSCode window), then run the commands below.
 
 ### Installation
 
@@ -47,9 +47,9 @@ $ npm run build
 
 ### Extra Info
 
-Remember to check the `.env` file in the server for everything. You don't need to set IP adresses or anything **in the client**, unless you change the server's port or run it on another IP other than localhost, then you'll need to change in the client and rebuild.
+Remember to check the `.env` file in the server for everything. You don't need to set IP adresses or anything **in the client**, unless you change the server's routes or decide to run it separate from the client, then you'll need to apply changes accordingly in the client and rebuild.
 
-**Warning**: Running the client in real time with `npm run dev` will not have it be served by the server, so for any changes to be picked up you need to re-build it with `npm run build`. The server automatically picks it up from the front-end's `/dist` folder. No need to copy-paste.
+**Warning**: Running the client in real time with `npm run dev` will not have it be served by the server, so for any changes to be picked up you need to re-build it with `npm run build`. The server automatically picks it up from the client's `/dist` folder. No need to copy-paste.
 
 ### License
 
