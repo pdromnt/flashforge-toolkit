@@ -1,6 +1,6 @@
 # Flashforge Dashboard (Previously Flashforge Toolkit)
 
-An small dashboard for older Flashforge printers that contains a NodeJS server fetching printer data and serving to the client and a static Vue3 client (served statically by the server) (showing "realtime" data and the printer's webcam) in a single package.  
+An small dashboard for older Flashforge printers that contains a NodeJS server fetching printer data and serving to the client and a static Vue3 client (served statically by the server) that shows "realtime" printer statuses, the printer's webcam and allows file uploading in a single package.  
 
 ## Server Instructions
 
