@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { getPrinterData } from './shared/printerdata.service';
+import { getPrinterData } from './shared/printerData.service';
 
 import flashForgeLogo from './assets/flashforge.webp';
+
+import PrinterUpload from './components/PrinterUpload.vue';
 
 const connectionStatus = ref('');
 const printerStatus = ref('');
@@ -40,7 +42,7 @@ onMounted(() => {
   <div class="wrapper">
     <div class="stream-side" v-if="!!printerStatus">
       <img v-if="isStreaming" alt="Camera Stream" class="camera-stream"
-        :src="'http://' + printerAddress + ':8080/?action=stream'" @error="isStreaming = true"/>
+        :src="'http://' + printerAddress + ':8080/?action=stream'" @error="isStreaming = false" />
     </div>
 
     <div class="info-side">
@@ -55,6 +57,7 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    <PrinterUpload />
   </div>
 </template>
 
