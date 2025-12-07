@@ -59,4 +59,3 @@ Contains code based from the [Flashforge-Orca](https://github.com/FlashForge/Orc
 
 ### TODO
 - Refactor the client's styling so it's less ugly, more componentized and maybe to look like something from the Klipper world (Mainsail my love <3).
-- Create and upload profiles that can be used with the Finder on the current version of OrcaSlicer. (Underway)
