@@ -213,6 +213,8 @@ async function uploadGcode({
   // 5) Optional start print
   if (startPrint) {
     tcpConsole.enqueueCmd(new SerialMessage(`~M23 0:/user/${gxRemoteFileName}\r\n`, "command"));
+  } else {
+    tcpConsole.enqueueCmd(new SerialMessage("~M26\r\n", "command"));
   }
 
   // 6) Run the queue

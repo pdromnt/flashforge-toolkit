@@ -1,5 +1,6 @@
 import { Socket } from "net";
 import { PRINTER_IP, PRINTER_PORT } from '../stores/configStore';
+import { PrinterInfo } from '../types/printerData';
 
 function connectToPrinter(): Promise<string> {
   const client = new Socket();
@@ -82,9 +83,35 @@ function getExtruderTemperature(): Promise<string> {
   });
 }
 
+function getPrinterInfo(): Promise<PrinterInfo> {
+  const client = new Socket();
+  client.connect(PRINTER_PORT, PRINTER_IP, () => {
+    console.log('Requesting printer information...');
+    client.write('~M115\r\n'); // Printer info
+  });
+
+  return new Promise((resolve) => {
+    client.on('data', (data) => {
+      console.log(`Data returned:\n ${data.toString()}`);
+      client.destroy();
+
+      const machineNameMatch = data.toString().match(/Machine Name: (.+)/);
+      const firmwareMatch = data.toString().match(/Firmware: (.+)/);
+      const serialNumberMatch = data.toString().match(/SN: (.+)/);
+
+      resolve({
+        machineName: machineNameMatch ? machineNameMatch[1].trim() : 'Unknown',
+        firmware: firmwareMatch ? firmwareMatch[1].trim() : 'Unknown',
+        serialNumber: serialNumberMatch ? serialNumberMatch[1].trim() : 'Unknown',
+      });
+    });
+  });
+}
+
 export {
   connectToPrinter,
   getPrinterStatus,
   getPrintProgress,
   getExtruderTemperature,
+  getPrinterInfo,
 };

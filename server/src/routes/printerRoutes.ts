@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { uploadGcode } from '../services/printerUploadService';
-import { connectToPrinter, getPrinterStatus, getPrintProgress, getExtruderTemperature } from '../services/printerStatusService';
+import { connectToPrinter, getPrinterStatus, getPrintProgress, getExtruderTemperature, getPrinterInfo } from '../services/printerStatusService';
 import { PRINTER_IP, PRINTER_PORT } from '../stores/configStore';
 import { PrinterData } from '../types/printerData';
 import multer from 'multer';
@@ -16,6 +16,11 @@ router.get('/status', async (_req: any, res: any) => {
     printerStatus: '',
     printProgress: 0,
     extruderTemperature: '',
+    printerInfo: {
+      machineName: '',
+      firmware: '',
+      serialNumber: ''
+    },
     printerAddress: ''
   };
 
@@ -24,12 +29,11 @@ router.get('/status', async (_req: any, res: any) => {
     printerData.printerStatus = await getPrinterStatus();
     printerData.printProgress = await getPrintProgress();
     printerData.extruderTemperature = await getExtruderTemperature();
+    printerData.printerInfo = await getPrinterInfo();
     printerData.printerAddress = PRINTER_IP;
   } catch (res) {
     printerData.printerConnection = res;
   }
-
-  console.log(printerData);
 
   res.status(200).send(printerData);
 });
