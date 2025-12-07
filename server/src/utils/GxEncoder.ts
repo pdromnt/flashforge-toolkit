@@ -3,9 +3,9 @@ import { Buffer } from 'node:buffer';
 export interface GxMetaData {
     printTime: number; // seconds
     filamentUsage: number; // mm
-    filamentUsageLeft: number; // mm (for dual extruder?)
+    filamentUsageLeft: number; // mm
     multiExtruderType: number;
-    layerHeight: number; // microns? or mm? Python says: int(f*1000) for microns.
+    layerHeight: number;
     shells: number;
     printSpeed: number; // mm/s
     bedTemperature: number;
@@ -30,9 +30,6 @@ export class GxEncoder {
         meta: GxMetaData
     ): Buffer {
         // 1. Construct Header
-        // Total header size in python seems to be implicitly handled by struct packing
-        // but effectively it's the first 58 bytes (since bitmap starts at 58).
-
         const headerBuffer = Buffer.alloc(58);
 
         // Version "xgcode 1.0\n\0" - 12 bytes
@@ -41,10 +38,6 @@ export class GxEncoder {
         // Constants: 4 x Int32
         // 0, bitmap_start, gcode_start, gcode_start
         const bitmapStart = 58;
-        // Bitmap logic: Python assumes fixed size check "if len(self.bmp) != 14454"
-        // But then uses hardcoded 14512 for gcode start.
-        // 58 + 14454 = 14512. So bitmap must be exactly 14454 bytes?
-        // If our bitmap is different size, we should probably adjust gcodeStart.
         const gcodeStart = bitmapStart + bitmap.length;
 
         let offset = 12;

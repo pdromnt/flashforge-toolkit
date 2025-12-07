@@ -35,12 +35,6 @@ export class BmpEncoder {
         // --- Info Header (BITMAPINFOHEADER) ---
         buffer.writeInt32LE(infoHeaderSize, 14); // Header size
         buffer.writeInt32LE(width, 18); // Width
-        // Height is negative to indicate top-down. If positive, it's bottom-up.
-        // Flashforge/GX usually standard BMP which is bottom-up?
-        // Let's try bottom-up (positive height). Sharp raw is top-down.
-        // So we need to write lines from bottom to top or just flip the sign?
-        // If I use negative height, it's top-down (standard behavior for many modern readers, but some old ones dislike it).
-        // Let's stick to standard bottom-up. We should write the last row from input as the first row in output.
         buffer.writeInt32LE(height, 22);
         buffer.writeInt16LE(1, 26); // Planes
         buffer.writeInt16LE(24, 28); // Bit depth (24 = RGB)
@@ -53,7 +47,6 @@ export class BmpEncoder {
 
         // --- Pixel Array ---
         // BMP stores BGR. Sharp input is RGB(A).
-        // And bottom-up.
         let ptr = headerSize;
         for (let y = height - 1; y >= 0; y--) {
             const rowOffset = ptr;
@@ -68,8 +61,6 @@ export class BmpEncoder {
                 buffer.writeUInt8(g, rowOffset + x * 3 + 1);
                 buffer.writeUInt8(r, rowOffset + x * 3 + 2);
             }
-            // Padding is already zeroed by alloc? No, alloc isn't allocUnsafe.
-            // But we step `rowSize` for next line.
             ptr += rowSize;
         }
 
