@@ -1,11 +1,11 @@
-import type { PrinterData } from './printerData.type';
+import type { PrinterData } from '../types/printerData';
 
 export const getPrinterData = async (): Promise<PrinterData> => {
   let apiUrl = '';
   if (import.meta.env.MODE === 'development') {
-    apiUrl = 'http://localhost:3000/data';
+    apiUrl = 'http://localhost:3000/status';
   } else {
-    apiUrl = '/data';
+    apiUrl = '/status';
   }
 
   return fetch(apiUrl)

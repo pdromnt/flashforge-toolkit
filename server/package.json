@@ -11,15 +11,16 @@
   "license": "MIT",
   "description": "",
   "dependencies": {
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
     "crc": "^4.3.2",
-    "multer": "^2.0.2"
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "multer": "^2.0.2",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "@types/express": "^5.0.5",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.10.1",
-    "typescript": "^5.9.3",
-    "@types/multer": "^2.0.0"
+    "typescript": "^5.9.3"
   }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { getPrinterData } from './shared/printerData.service';
+import { getPrinterData } from './services/printerStatusService';
 
 import flashForgeLogo from './assets/flashforge.webp';
 
