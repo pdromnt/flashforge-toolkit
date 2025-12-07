@@ -3,7 +3,7 @@
     <h3>Upload to Printer</h3>
 
     <div class="upload-form">
-      <input type="file" @change="onFileChange" />
+      <input type="file" @change="onFileChange" accept=".gcode" />
       <button :disabled="!file || uploading" @click="startUpload">
         {{ uploading ? "Uploading..." : "Upload" }}
       </button>
