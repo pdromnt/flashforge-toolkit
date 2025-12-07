@@ -9,6 +9,15 @@ import fs from 'fs';
 const router = Router();
 const upload = multer({ dest: 'uploads/' });
 
+// Fake OctoPrint endpoint to support Orca's direct upload
+router.get('/api/version', (req, res) => {
+  res.json({
+    api: "0.1",
+    server: "1.3.10",
+    text: "OctoPrint 1.3.10" // OrcaSlicer looks for "OctoPrint" in this string
+  });
+});
+
 //Status endpoint
 router.get('/status', async (_req: any, res: any) => {
   const printerData: PrinterData = {
@@ -39,9 +48,12 @@ router.get('/status', async (_req: any, res: any) => {
 });
 
 // Upload endpoint
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post(['/upload', '/api/files/local'], upload.single('file'), async (req, res) => {
   const filePath = req.file.path;
   const remoteFileName = req.file.originalname;
+  const startPrint = req.body.print;
+
+  console.log(`Received file: ${req.file.originalname}`);
 
   try {
     await uploadGcode({
@@ -49,7 +61,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       port: PRINTER_PORT,
       localFilePath: filePath,
       remoteFileName,
-      startPrint: false,
+      startPrint,
       onProgress: (sent, total) => {
         const pct = ((sent / total) * 100).toFixed(2);
         process.stdout.write(`Uploaded: ${sent}/${total} bytes (${pct}%)\r`);

@@ -172,6 +172,7 @@ async function uploadGcode({
   onProgress, // function(sentBytes, totalBytes)
 }) {
   // Parse G-code to GX
+  console.log(`Parsing G-code into GX: ${localFilePath}`);
   const gcodeContent = fs.readFileSync(localFilePath, 'utf8');
   const parser = new GxMetaParser();
   const { meta, thumbnail } = await parser.parse(gcodeContent);
@@ -189,13 +190,14 @@ async function uploadGcode({
   const gxBuffer = gxService.encode(gcodeBuffer, thumbnail || Buffer.alloc(0), meta);
   fs.writeFileSync(gxFilePath, gxBuffer);
 
+  // 1) Queue setup commands
   const tcpConsole = new TCPConsole(host, port);
 
-  // 1) Queue setup commands
   tcpConsole.enqueueCmd(new SerialMessage("~M601 S1\r\n", "command")); // control enable
   tcpConsole.enqueueCmd(new SerialMessage("~M650\r\n", "command"));    // connect
   tcpConsole.enqueueCmd(new SerialMessage("~M119\r\n", "command"));    // status
 
+  console.log(`Uploading GX file: ${gxRemoteFileName}`);
   // 2) File upload command with exact size (original file size, not padded)
   const fileSize = fs.statSync(gxFilePath).size;
   tcpConsole.enqueueCmd(new SerialMessage(`~M28 ${fileSize} 0:/user/${gxRemoteFileName}\r\n`, "command"));
