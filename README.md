@@ -55,7 +55,4 @@ Remember to check the `.env` file in the server for everything. You don't need t
 
 [ISC](https://opensource.org/license/isc-license-txt/)
 
-Contains code based from the [Flashforge-Orca](https://github.com/FlashForge/Orca-Flashforge/blob/9079f31c86b6d34ae7e8dd9cf6de0adb1e7a443f/src/slic3r/Utils/Flashforge.cpp) + some printer reverse engineering to actually get it working since the printer I'm using (Finder) is discontinued.
-
-### TODO
-- Refactor the client's styling so it's less ugly, more componentized and maybe to look like something from the Klipper world (Mainsail my love <3).
+Some code is based on the [Flashforge-Orca](https://github.com/FlashForge/Orca-Flashforge/blob/9079f31c86b6d34ae7e8dd9cf6de0adb1e7a443f/src/slic3r/Utils/Flashforge.cpp) implementation + some reverse engineering of the Flashforge Finder itself to actually get it working since the printer is unsupported by the slicer.
