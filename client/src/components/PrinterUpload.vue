@@ -1,36 +1,50 @@
 <template>
-  <div class="upload-container">
-    <h3>Upload to Printer</h3>
+  <div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+      <h2 class="card-title">Upload G-Code</h2>
 
-    <div class="upload-form">
-      <input type="file" @change="onFileChange" accept=".gcode" />
-      <button :disabled="!file || uploading" @click="startUpload">
-        {{ uploading ? "Uploading..." : "Upload" }}
-      </button>
+      <div class="form-control w-full">
+        <label class="label">
+          <span class="label-text">Select file</span>
+        </label>
+        <input type="file" @change="onFileChange" accept=".gcode" class="file-input file-input-bordered w-full" />
+      </div>
+
+      <div class="card-actions justify-end mt-4">
+        <button class="btn btn-primary" :disabled="!file || uploading" @click="startUpload">
+          <span v-if="uploading" class="loading loading-spinner"></span>
+          {{ uploading ? "Uploading..." : "Upload" }}
+        </button>
+      </div>
+
+      <div v-if="uploading || progressPct > 0" class="mt-4">
+        <progress class="progress progress-primary w-full" :value="progressPct" max="100"></progress>
+      </div>
+
+      <div v-if="status" class="alert mt-4" :class="status.includes('Error') ? 'alert-error' : 'alert-success'">
+        <span>{{ status }}</span>
+      </div>
     </div>
-
-    <div v-if="uploading" class="progress">
-      <div class="progress-bar" :style="{ width: progressPct + '%' }"></div>
-    </div>
-
-    <p v-if="status">{{ status }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 
-const file = ref(null);
+const file = ref<File | null>(null);
 const uploading = ref(false);
 const progressPct = ref(0);
 const status = ref("");
 
-const onFileChange = (e: any) => {
-  file.value = e.target.files[0];
+const onFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (target.files) {
+    file.value = target.files[0];
+  }
 }
 
 const startUpload = async () => {
-  if (!file) return;
+  if (!file.value) return;
 
   uploading.value = true;
   progressPct.value = 0;
@@ -38,64 +52,52 @@ const startUpload = async () => {
 
   // Create FormData
   const formData = new FormData();
-  formData.append("file", file.value!);
+  formData.append("file", file.value);
 
-  // Start upload request
-  const response = await fetch("/upload", {
-    method: "POST",
-    body: formData,
-  });
-
-  // Listen to SSE stream
-  const reader = response?.body?.getReader();
-  const decoder = new TextDecoder("utf-8");
-
-  while (true) {
-    const { done, value } = await reader!.read();
-    if (done) break;
-
-    const chunk = decoder.decode(value, { stream: true });
-    chunk.split("\n").forEach((line) => {
-      if (line.startsWith("data:")) {
-        const payload = JSON.parse(line.replace("data: ", ""));
-        if (payload.pct) {
-          progressPct.value = parseFloat(payload.pct);
-        }
-        if (payload.done) {
-          status.value = "Upload complete!";
-          uploading.value = false;
-        }
-        if (payload.error) {
-          status.value = "Error: " + payload.error;
-          uploading.value = false;
-        }
-      }
+  try {
+    // Start upload request
+    const response = await fetch("/upload", {
+      method: "POST",
+      body: formData,
     });
+
+    if (!response.body) {
+      throw new Error("No response body");
+    }
+
+    // Listen to SSE stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      chunk.split("\n").forEach((line) => {
+        if (line.startsWith("data:")) {
+          try {
+            const payload = JSON.parse(line.replace("data: ", ""));
+            if (payload.pct) {
+              progressPct.value = parseFloat(payload.pct);
+            }
+            if (payload.done) {
+              status.value = "Upload complete!";
+              uploading.value = false;
+            }
+            if (payload.error) {
+              status.value = "Error: " + payload.error;
+              uploading.value = false;
+            }
+          } catch (e) {
+            console.error("Error parsing JSON", e);
+          }
+        }
+      });
+    }
+  } catch (err: any) {
+    status.value = "Upload failed: " + err.message;
+    uploading.value = false;
   }
 }
 </script>
-
-<style scoped>
-.upload-container {
-  max-width: 400px;
-  margin: auto;
-  text-align: center;
-}
-
-.upload-form {
-  display: flex;
-}
-
-.progress {
-  width: 100%;
-  background: #eee;
-  height: 20px;
-  margin-top: 10px;
-}
-
-.progress-bar {
-  height: 100%;
-  background: #42b983;
-  transition: width 0.2s ease;
-}
-</style>
