@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { uploadGcode } from '../services/printerUploadService';
-import { connectToPrinter, getPrinterStatus, getPrintProgress, getExtruderTemperature } from '../services/printerSocketService';
+import { connectToPrinter, getPrinterStatus, getPrintProgress, getExtruderTemperature } from '../services/printerStatusService';
 import { PRINTER_IP, PRINTER_PORT } from '../stores/configStore';
 import { PrinterData } from '../types/printerData';
 import multer from 'multer';
@@ -9,7 +9,8 @@ import fs from 'fs';
 const router = Router();
 const upload = multer({ dest: 'uploads/' });
 
-router.get('/data', async (_req: any, res: any) => {
+//Status endpoint
+router.get('/status', async (_req: any, res: any) => {
   const printerData: PrinterData = {
     printerConnection: '',
     printerStatus: '',
@@ -49,8 +50,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         const pct = ((sent / total) * 100).toFixed(2);
         process.stdout.write(`Uploaded: ${sent}/${total} bytes (${pct}%)\r`);
         res.write(`data: ${JSON.stringify({ sent, total, pct })}\n\n`)
-        
-        if(pct === '100.00') {
+
+        if (pct === '100.00') {
           process.stdout.write('\n');
         }
       }
@@ -59,8 +60,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
   } catch (err) {
     res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-  }finally {
-    fs.unlinkSync(filePath); // cleanup temp file
+  } finally {
+    // cleanup temp files
+    fs.unlinkSync(filePath + '.gx');
+    fs.unlinkSync(filePath);
   }
 });
 

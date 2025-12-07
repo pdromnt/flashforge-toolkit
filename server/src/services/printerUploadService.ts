@@ -1,6 +1,8 @@
 import net from 'net';
 import fs from 'fs';
 import crc from 'crc';
+import { GxMetaParser } from '../utils/GxMetaParser.js';
+import { GxEncoder } from '../utils/GxEncoder.js';
 
 class SerialMessage {
   content: any;
@@ -169,34 +171,52 @@ async function uploadGcode({
   startPrint,
   onProgress, // function(sentBytes, totalBytes)
 }) {
-  const console = new TCPConsole(host, port);
+  // Parse G-code to GX
+  const gcodeContent = fs.readFileSync(localFilePath, 'utf8');
+  const parser = new GxMetaParser();
+  const { meta, thumbnail } = await parser.parse(gcodeContent);
+
+  const gxService = new GxEncoder();
+
+  // Ensure we have a valid buffer for G-code part
+  const gcodeBuffer = Buffer.from(gcodeContent, 'utf8');
+
+  // Create GX file paths
+  const gxFilePath = localFilePath.replace(/\.gcode$/i, '') + '.gx';
+  const gxRemoteFileName = remoteFileName.replace(/\.gcode$/i, '') + '.gx';
+
+  // Encode
+  const gxBuffer = gxService.encode(gcodeBuffer, thumbnail || Buffer.alloc(0), meta);
+  fs.writeFileSync(gxFilePath, gxBuffer);
+
+  const tcpConsole = new TCPConsole(host, port);
 
   // 1) Queue setup commands
-  console.enqueueCmd(new SerialMessage("~M601 S1\r\n", "command")); // control enable
-  console.enqueueCmd(new SerialMessage("~M650\r\n", "command"));    // connect (5M)
-  console.enqueueCmd(new SerialMessage("~M119\r\n", "command"));    // status
+  tcpConsole.enqueueCmd(new SerialMessage("~M601 S1\r\n", "command")); // control enable
+  tcpConsole.enqueueCmd(new SerialMessage("~M650\r\n", "command"));    // connect
+  tcpConsole.enqueueCmd(new SerialMessage("~M119\r\n", "command"));    // status
 
   // 2) File upload command with exact size (original file size, not padded)
-  const fileSize = fs.statSync(localFilePath).size;
-  console.enqueueCmd(new SerialMessage(`~M28 ${fileSize} 0:/user/${remoteFileName}\r\n`, "command"));
+  const fileSize = fs.statSync(gxFilePath).size;
+  tcpConsole.enqueueCmd(new SerialMessage(`~M28 ${fileSize} 0:/user/${gxRemoteFileName}\r\n`, "command"));
 
   // 3) Packetized data stream
-  console.enqueueCmd(new SerialMessage({
-    filePath: localFilePath,
+  tcpConsole.enqueueCmd(new SerialMessage({
+    filePath: gxFilePath,
     packetSize: 4096,
     progressCb: onProgress,
   }, "data"));
 
   // 4) Save file
-  console.enqueueCmd(new SerialMessage("~M29\r\n", "command"));
+  tcpConsole.enqueueCmd(new SerialMessage("~M29\r\n", "command"));
 
   // 5) Optional start print
   if (startPrint) {
-    console.enqueueCmd(new SerialMessage(`~M23 0:/user/${remoteFileName}\r\n`, "command"));
+    tcpConsole.enqueueCmd(new SerialMessage(`~M23 0:/user/${gxRemoteFileName}\r\n`, "command"));
   }
 
   // 6) Run the queue
-  return console.runQueue();
+  return tcpConsole.runQueue();
 }
 
 export { uploadGcode };
