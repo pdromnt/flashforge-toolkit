@@ -7,10 +7,10 @@ import WebcamPanel from './components/WebcamPanel.vue';
 import StatusPanel from './components/StatusPanel.vue';
 import PrinterUpload from './components/PrinterUpload.vue';
 
-const connectionStatus = ref('');
-const printerStatus = ref('');
+const connectionStatus = ref('Connecting...');
+const printerStatus = ref('Unknown');
 const printProgress = ref(0);
-const extruderTemperature = ref('');
+const extruderTemperature = ref('Unknown');
 const printerAddress = ref('');
 
 

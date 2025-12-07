@@ -21,7 +21,7 @@ function connectToPrinter(): Promise<string> {
     client.on('error', () => {
       console.log('Connection failed - ' + new Date());
       client.destroy();
-      reject('Unknown connection error - Printer may be offline?');
+      reject('Connection failed (Printer offline?)');
     });
   });
 }
