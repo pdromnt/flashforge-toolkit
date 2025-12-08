@@ -33,6 +33,8 @@ router.get('/status', async (_req: any, res: any) => {
     printerAddress: ''
   };
 
+  console.log(`[LOG] Printer data request - ${new Date()}`);
+
   try {
     printerData.printerConnection = await connectToPrinter();
     printerData.printerStatus = await getPrinterStatus();
@@ -53,7 +55,7 @@ router.post(['/upload', '/api/files/local'], upload.single('file'), async (req, 
   const remoteFileName = req.file.originalname;
   const startPrint = req.body.print;
 
-  console.log(`Received file: ${req.file.originalname}`);
+  console.log(`[LOG] Received file for upload: ${req.file.originalname} - ${new Date()}`);
 
   try {
     await uploadGcode({
@@ -64,7 +66,7 @@ router.post(['/upload', '/api/files/local'], upload.single('file'), async (req, 
       startPrint,
       onProgress: (sent, total) => {
         const pct = ((sent / total) * 100).toFixed(2);
-        process.stdout.write(`Uploaded: ${sent}/${total} bytes (${pct}%)\r`);
+        process.stdout.write(`[LOG] Uploaded: ${sent}/${total} bytes (${pct}%)\r`);
         res.write(`data: ${JSON.stringify({ sent, total, pct })}\n\n`)
 
         if (pct === '100.00') {
@@ -72,7 +74,7 @@ router.post(['/upload', '/api/files/local'], upload.single('file'), async (req, 
         }
       }
     });
-    console.log('Upload complete.');
+    console.log('[LOG] Upload complete.');
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
   } catch (err) {
     res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);

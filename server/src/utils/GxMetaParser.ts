@@ -92,7 +92,7 @@ export class GxMetaParser {
 
                 thumbnail = BmpEncoder.encode(raw.info.width, raw.info.height, raw.data);
             } catch (e) {
-                console.error('Failed to process thumbnail:', e);
+                console.error('[ERROR] Failed to process thumbnail:', e);
                 throw e;
             }
         }
