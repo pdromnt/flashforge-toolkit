@@ -1,23 +1,5 @@
 import { Buffer } from 'node:buffer';
-
-export interface GxMetaData {
-    printTime: number; // seconds
-    filamentUsage: number; // mm
-    filamentUsageLeft: number; // mm
-    multiExtruderType: number;
-    layerHeight: number;
-    shells: number;
-    printSpeed: number; // mm/s
-    bedTemperature: number;
-    printTemperature: number; // right extruder
-    printTemperatureLeft: number; // left extruder
-}
-
-export interface GxHeader extends GxMetaData {
-    version: string;
-    bitmapStart: number;
-    gcodeStart: number;
-}
+import { GxMetaData } from '../types/gxMetaData.js';
 
 export class GxEncoder {
     private static readonly HEADER_SIGNATURE = 'xgcode 1.0\n';

@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { Buffer } from 'node:buffer';
-import { GxMetaData } from './GxEncoder.js';
+import { GxMetaData } from '../types/gxMetaData.js';
 import { BmpEncoder } from './BmpEncoder.js';
 
 export class GxMetaParser {
@@ -31,10 +31,17 @@ export class GxMetaParser {
 
             // Metadata Parsing
             if (trimmed.startsWith('; estimated printing time (normal mode) =')) {
-                const match = trimmed.match(/(\d+)s/);
-                if (match) {
-                    meta.printTime = parseInt(match[1], 10);
-                }
+                const val = trimmed.split('=')[1] || '';
+                let totalSeconds = 0;
+                const hMatch = val.match(/(\d+)h/);
+                const mMatch = val.match(/(\d+)m/);
+                const sMatch = val.match(/(\d+)s/);
+
+                if (hMatch) totalSeconds += parseInt(hMatch[1], 10) * 3600;
+                if (mMatch) totalSeconds += parseInt(mMatch[1], 10) * 60;
+                if (sMatch) totalSeconds += parseInt(sMatch[1], 10);
+
+                if (totalSeconds > 0) meta.printTime = totalSeconds;
             } else if (trimmed.startsWith('; filament used [mm] =')) {
                 const val = trimmed.split('=')[1].trim();
                 meta.filamentUsage = parseFloat(val);
