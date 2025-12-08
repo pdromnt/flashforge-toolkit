@@ -1,118 +1,75 @@
-import { Socket } from "net";
+import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket';
 import { PRINTER_IP, PRINTER_PORT, PRINTER_DEBUG } from '../stores/configStore';
 import { PrinterInfo } from '../types/printerData';
 
-function connectToPrinter(): Promise<string> {
-  const client = new Socket();
-
-  client.connect(PRINTER_PORT, PRINTER_IP, () => {
-    console.log('Connecting...');
-    client.write('~M601 S1\r\n'); // Req. Control
-  });
-
-  return new Promise((resolve, reject) => {
-    client.on('data', (data) => {
-      if (data.includes('Control Success.')) {
-        console.log('Connected - ' + new Date());
-        client.destroy();
-        resolve('Connected');
-      }
-    });
-
-    client.on('error', () => {
-      console.log('Connection failed - ' + new Date());
-      client.destroy();
-      reject('Connection failed (Printer offline?)');
-    });
-  });
+async function executeSimpleCommand(command: string, expectRegex?: RegExp): Promise<string> {
+  const client = new PrinterSocketClient(PRINTER_IP, PRINTER_PORT, { readTimeoutMs: 5000, writeTimeoutMs: 5000 });
+  client.enqueueCmd(new SerialMessage(command, 'command'));
+  await client._connect();
+  const result = await client._sendCommandAndWait(command + '\r\n', { expectRegex: expectRegex || /.+/ });
+  client.client.destroy();
+  return result as string;
 }
 
-function getPrinterStatus(): Promise<string> {
-  const client = new Socket();
-  client.connect(PRINTER_PORT, PRINTER_IP, () => {
-    console.log('Requesting machine status...');
-    client.write('~M119\r\n'); // Status
-  });
-
-  return new Promise((resolve) => {
-    client.on('data', (data) => {
-      debugLog(data.toString());
-      client.destroy();
-      resolve(
-        data.toString().includes('MachineStatus: READY')
-          ? 'Idle/Ready'
-          : data.toString().includes('MachineStatus: BUILDING_FROM_SD')
-            ? 'Printing'
-            : 'Unknown Status',
-      );
-    });
-  });
+async function connectToPrinter(): Promise<string> {
+  // M601 S1 -> Expect "Control Success"
+  const res = await executeSimpleCommand('~M601 S1', /Control Success/i);
+  return 'Connected';
 }
 
-function getPrintProgress(): Promise<number> {
-  const client = new Socket();
-  client.connect(PRINTER_PORT, PRINTER_IP, () => {
-    console.log('Requesting print progress...');
-    client.write('~M27\r\n'); // Progress
-  });
-
-  return new Promise((resolve) => {
-    client.on('data', (data) => {
-      debugLog(data.toString());
-      client.destroy();
-      resolve(Number(data.toString().split('byte ')[1].split('/')[0]));
-    });
-  });
+async function getPrinterStatus(): Promise<string> {
+  // M119 -> Expect "MachineStatus"
+  const data = await executeSimpleCommand('~M119', /MachineStatus/i);
+  debugLog(data);
+  return data.includes('MachineStatus: READY')
+    ? 'Idle/Ready'
+    : data.includes('MachineStatus: BUILDING_FROM_SD')
+      ? 'Printing'
+      : 'Unknown Status';
 }
 
-function getExtruderTemperature(): Promise<string> {
-  const client = new Socket();
-  client.connect(PRINTER_PORT, PRINTER_IP, () => {
-    console.log('Requesting extruder temperature...');
-    client.write('~M105\r\n'); // Temperature
-  });
-
-  return new Promise((resolve) => {
-    client.on('data', (data) => {
-      debugLog(data.toString());
-      client.destroy();
-      resolve(
-        data.toString().split(' ')[2].replace('Received.\r\nT0:', '') + 'ºC',
-      );
-    });
-  });
+async function getPrintProgress(): Promise<number> {
+  // M27 -> Expect "byte"
+  const data = await executeSimpleCommand('~M27', /byte/i);
+  debugLog(data);
+  try {
+    return Number(data.split('byte ')[1].split('/')[0]);
+  } catch (e) {
+    return 0;
+  }
 }
 
-function getPrinterInfo(): Promise<PrinterInfo> {
-  const client = new Socket();
-  client.connect(PRINTER_PORT, PRINTER_IP, () => {
-    console.log('Requesting printer information...');
-    client.write('~M115\r\n'); // Printer info
-  });
+async function getExtruderTemperature(): Promise<string> {
+  // M105 -> Expect "Received" or "T0"
+  const data = await executeSimpleCommand('~M105', /T0:/i);
+  debugLog(data);
+  try {
+    const match = data.match(/T0:\s*(\d+)/i);
+    return match ? match[1] + 'ºC' : 'Unknown';
+  } catch (e) {
+    return 'Unknown';
+  }
+}
 
-  return new Promise((resolve) => {
-    client.on('data', (data) => {
-      debugLog(data.toString());
-      client.destroy();
+async function getPrinterInfo(): Promise<PrinterInfo> {
+  // M115 -> Expect "Machine Name" or "SN"
+  const data = await executeSimpleCommand('~M115', /SN:/i);
+  debugLog(data);
 
-      const machineNameMatch = data.toString().match(/Machine Name: (.+)/);
-      const firmwareMatch = data.toString().match(/Firmware: (.+)/);
-      const serialNumberMatch = data.toString().match(/SN: (.+)/);
+  const machineNameMatch = data.match(/Machine Name: (.+)/);
+  const firmwareMatch = data.match(/Firmware: (.+)/);
+  const serialNumberMatch = data.match(/SN: (.+)/);
 
-      resolve({
-        machineName: machineNameMatch ? machineNameMatch[1].trim() : 'Unknown',
-        firmware: firmwareMatch ? firmwareMatch[1].trim() : 'Unknown',
-        serialNumber: serialNumberMatch ? serialNumberMatch[1].trim() : 'Unknown',
-      });
-    });
-  });
+  return {
+    machineName: machineNameMatch ? machineNameMatch[1].trim() : 'Unknown',
+    firmware: firmwareMatch ? firmwareMatch[1].trim() : 'Unknown',
+    serialNumber: serialNumberMatch ? serialNumberMatch[1].trim() : 'Unknown',
+  };
 }
 
 function debugLog(data: string) {
   if (PRINTER_DEBUG === 'true') {
-    console.log(`Data returned:\n ${data}`);
-  } else {
-    console.log('Data returned.');
+    console.log(`[LOG] Data returned:\n ${data}`);
   }
 }
 
