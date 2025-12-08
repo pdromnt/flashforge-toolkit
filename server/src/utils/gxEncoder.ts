@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { GxMetaData } from '../types/GxMetaData.js';
+import { GxMetaData } from '../types/GxMetaData';
 
 export class gxEncoder {
     private static readonly HEADER_SIGNATURE = 'xgcode 1.0\n';

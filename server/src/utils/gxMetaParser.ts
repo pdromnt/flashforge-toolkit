@@ -1,7 +1,7 @@
 import sharp from 'sharp';
 import { Buffer } from 'node:buffer';
-import { GxMetaData } from '../types/GxMetaData.js';
-import { bmpEncoder } from './bmpEncoder.js';
+import { GxMetaData } from '../types/GxMetaData';
+import { bmpEncoder } from './bmpEncoder';
 
 export class gxMetaParser {
     /**

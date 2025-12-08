@@ -1,9 +1,9 @@
 import net from 'net';
 import fs from 'fs';
 import crc from 'crc';
-import { gxMetaParser } from '../utils/gxMetaParser.js';
-import { gxEncoder } from '../utils/gxEncoder.js';
-import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket.js';
+import { gxMetaParser } from '../utils/gxMetaParser';
+import { gxEncoder } from '../utils/gxEncoder';
+import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket';
 
 
 
