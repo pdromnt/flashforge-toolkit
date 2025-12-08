@@ -6,6 +6,7 @@ An intuitive dashboard for older Flashforge printers, featuring a NodeJS server 
 
 <details>
 <summary>Server Setup Instructions</summary>
+<br>
 
 **First** go inside the `server` folder (or open it with another VSCode window), then run the commands below.
 
@@ -30,6 +31,8 @@ Inside the `.env` you can find where to put your printer's IP address (make sure
 
 <details>
 <summary>Client Setup Instructions</summary>
+<br>
+
 **First** go inside the `client` folder (or open it with another VSCode window), then run the commands below.
 
 ### Installation
