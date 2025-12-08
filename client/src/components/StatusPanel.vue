@@ -2,7 +2,7 @@
     <div class="flex flex-col gap-4">
         <!-- Printer Status -->
         <div class="collapse collapse-arrow bg-base-100 shadow-xl">
-            <input type="radio" name="status-accordion" checked />
+            <input type="checkbox" name="status-accordion" checked />
             <div class="collapse-title text-xl font-medium flex items-center gap-2">
                 <span v-if="connection === 'Connected'" class="badge badge-success badge-xs"></span>
                 <span v-else class="badge badge-error badge-xs"></span>
@@ -33,7 +33,7 @@
 
         <!-- Progress -->
         <div class="collapse collapse-arrow bg-base-100 shadow-xl">
-            <input type="radio" name="status-accordion" />
+            <input type="checkbox" name="status-accordion" checked />
             <div class="collapse-title text-xl font-medium">
                 Printing Progress
             </div>
