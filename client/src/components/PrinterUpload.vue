@@ -91,6 +91,12 @@ const startUpload = async () => {
             }
           } catch (e) {
             console.error("Error parsing JSON", e);
+          } finally {
+            setTimeout(() => {
+              status.value = "";
+              progressPct.value = 0;
+              file.value = null;
+            }, 10000);
           }
         }
       });
@@ -98,6 +104,12 @@ const startUpload = async () => {
   } catch (err: any) {
     status.value = "Upload failed: " + err.message;
     uploading.value = false;
+  } finally {
+    setTimeout(() => {
+      status.value = "";
+      progressPct.value = 0;
+      file.value = null;
+    }, 10000);
   }
 }
 </script>
