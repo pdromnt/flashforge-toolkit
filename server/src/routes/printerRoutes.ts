@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { uploadGcode } from '../services/printerUploadService';
 import { connectToPrinter, getPrinterStatus, getPrintProgress, getExtruderTemperature, getPrinterInfo } from '../services/printerStatusService';
 import { PRINTER_IP, PRINTER_PORT } from '../stores/configStore';
-import { PrinterData } from '../types/printerData';
+import { PrinterData } from '../types/PrinterData';
 import multer from 'multer';
 import fs from 'fs';
 

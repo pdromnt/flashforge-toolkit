@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 
-export class BmpEncoder {
+export class bmpEncoder {
     /**
      * Encodes raw RGB/RGBA data into a BMP buffer (24-bit).
      * @param width Image width

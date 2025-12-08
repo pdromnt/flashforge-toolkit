@@ -1,8 +1,8 @@
 import net from 'net';
 import fs from 'fs';
 import crc from 'crc';
-import { GxMetaParser } from '../utils/GxMetaParser.js';
-import { GxEncoder } from '../utils/GxEncoder.js';
+import { gxMetaParser } from '../utils/gxMetaParser.js';
+import { gxEncoder } from '../utils/gxEncoder.js';
 import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket.js';
 
 
@@ -19,10 +19,10 @@ async function uploadGcode({
   // Parse G-code to GX
   console.log(`[LOG] Parsing G-code into GX: ${localFilePath}`);
   const gcodeContent = fs.readFileSync(localFilePath, 'utf8');
-  const parser = new GxMetaParser();
+  const parser = new gxMetaParser();
   const { meta, thumbnail } = await parser.parse(gcodeContent);
 
-  const gxService = new GxEncoder();
+  const gxService = new gxEncoder();
 
   // Ensure we have a valid buffer for G-code part
   const gcodeBuffer = Buffer.from(gcodeContent, 'utf8');

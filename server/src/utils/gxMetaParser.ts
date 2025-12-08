@@ -1,9 +1,9 @@
 import sharp from 'sharp';
 import { Buffer } from 'node:buffer';
-import { GxMetaData } from '../types/gxMetaData.js';
-import { BmpEncoder } from './BmpEncoder.js';
+import { GxMetaData } from '../types/GxMetaData.js';
+import { bmpEncoder } from './bmpEncoder.js';
 
-export class GxMetaParser {
+export class gxMetaParser {
     /**
      * Parses G-code content to extract metadata and thumbnail.
      * Compatible with OrcaSlicer output.
@@ -90,7 +90,7 @@ export class GxMetaParser {
                     .raw()
                     .toBuffer({ resolveWithObject: true });
 
-                thumbnail = BmpEncoder.encode(raw.info.width, raw.info.height, raw.data);
+                thumbnail = bmpEncoder.encode(raw.info.width, raw.info.height, raw.data);
             } catch (e) {
                 console.error('[ERROR] Failed to process thumbnail:', e);
                 throw e;

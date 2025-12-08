@@ -1,6 +1,6 @@
 import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket';
 import { PRINTER_IP, PRINTER_PORT, PRINTER_DEBUG } from '../stores/configStore';
-import { PrinterInfo } from '../types/printerData';
+import { PrinterInfo } from '../types/PrinterData';
 
 async function executeSimpleCommand(command: string, expectRegex?: RegExp): Promise<string> {
   const client = new PrinterSocketClient(PRINTER_IP, PRINTER_PORT, { readTimeoutMs: 5000, writeTimeoutMs: 5000 });
