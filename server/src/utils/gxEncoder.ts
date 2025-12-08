@@ -2,7 +2,6 @@ import { Buffer } from 'node:buffer';
 import { GxMetaData } from '../types/GxMetaData';
 
 export class gxEncoder {
-    private static readonly HEADER_SIGNATURE = 'xgcode 1.0\n';
     /**
      * Wraps G-code and metadata into a GX binary buffer.
      */

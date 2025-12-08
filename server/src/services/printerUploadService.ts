@@ -1,11 +1,7 @@
-import net from 'net';
 import fs from 'fs';
-import crc from 'crc';
 import { gxMetaParser } from '../utils/gxMetaParser';
 import { gxEncoder } from '../utils/gxEncoder';
 import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket';
-
-
 
 // Core upload logic
 async function uploadGcode({
