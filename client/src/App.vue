@@ -6,46 +6,53 @@ import Navbar from './components/Navbar.vue';
 import WebcamPanel from './components/WebcamPanel.vue';
 import StatusPanel from './components/StatusPanel.vue';
 import PrinterUpload from './components/PrinterUpload.vue';
+import Footer from './components/Footer.vue';
+import type { PrinterInfo } from './types/printerData';
 
 const connectionStatus = ref('Connecting...');
 const printerStatus = ref('Unknown');
 const printProgress = ref(0);
 const extruderTemperature = ref('Unknown');
 const printerAddress = ref('');
+const printerInfo = ref<PrinterInfo | undefined>(undefined);
 
-
-
-onMounted(() => {
+const updateData = () => {
   getPrinterData().then(res => {
     connectionStatus.value = res.printerConnection;
     printerStatus.value = res.printerStatus;
     printProgress.value = res.printProgress;
     extruderTemperature.value = res.extruderTemperature;
     printerAddress.value = res.printerAddress;
+    printerInfo.value = res.printerInfo;
   }).catch(() => {
     connectionStatus.value = 'No response...';
   });
+};
 
-  setInterval(() => {
-    getPrinterData();
-  }, 10 * 1000);
+onMounted(() => {
+  updateData();
+
+  setInterval(updateData, 10 * 1000);
 });
 </script>
 
 <template>
-  <div class="min-h-screen bg-base-200 p-4">
-    <!-- Layout will go here -->
-    <Navbar />
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-      <div class="lg:col-span-2">
-        <WebcamPanel :address="printerAddress" />
-      </div>
-      <div>
-        <StatusPanel :connection="connectionStatus" :status="printerStatus" :temp="extruderTemperature"
-          :progress="printProgress" />
-        <PrinterUpload class="mt-4" />
+  <div class="min-h-screen bg-base-200 flex flex-col">
+    <div class="p-4 flex-grow">
+      <!-- Layout will go here -->
+      <Navbar />
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+        <div class="lg:col-span-2">
+          <WebcamPanel :address="printerAddress" />
+        </div>
+        <div>
+          <StatusPanel :connection="connectionStatus" :status="printerStatus" :temp="extruderTemperature"
+            :progress="printProgress" />
+          <PrinterUpload class="mt-4" />
+        </div>
       </div>
     </div>
+    <Footer :info="printerInfo" />
   </div>
 </template>
 
