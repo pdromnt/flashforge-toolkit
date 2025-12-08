@@ -1,5 +1,5 @@
 import { Socket } from "net";
-import { PRINTER_IP, PRINTER_PORT } from '../stores/configStore';
+import { PRINTER_IP, PRINTER_PORT, PRINTER_DEBUG } from '../stores/configStore';
 import { PrinterInfo } from '../types/printerData';
 
 function connectToPrinter(): Promise<string> {
@@ -36,7 +36,7 @@ function getPrinterStatus(): Promise<string> {
 
   return new Promise((resolve) => {
     client.on('data', (data) => {
-      console.log(`Data returned:\n ${data.toString()}`);
+      debugLog(data.toString());
       client.destroy();
       resolve(
         data.toString().includes('MachineStatus: READY')
@@ -58,7 +58,7 @@ function getPrintProgress(): Promise<number> {
 
   return new Promise((resolve) => {
     client.on('data', (data) => {
-      console.log(`Data returned:\n ${data.toString()}`);
+      debugLog(data.toString());
       client.destroy();
       resolve(Number(data.toString().split('byte ')[1].split('/')[0]));
     });
@@ -74,7 +74,7 @@ function getExtruderTemperature(): Promise<string> {
 
   return new Promise((resolve) => {
     client.on('data', (data) => {
-      console.log(`Data returned:\n ${data.toString()}`);
+      debugLog(data.toString());
       client.destroy();
       resolve(
         data.toString().split(' ')[2].replace('Received.\r\nT0:', '') + 'ºC',
@@ -92,7 +92,7 @@ function getPrinterInfo(): Promise<PrinterInfo> {
 
   return new Promise((resolve) => {
     client.on('data', (data) => {
-      console.log(`Data returned:\n ${data.toString()}`);
+      debugLog(data.toString());
       client.destroy();
 
       const machineNameMatch = data.toString().match(/Machine Name: (.+)/);
@@ -106,6 +106,14 @@ function getPrinterInfo(): Promise<PrinterInfo> {
       });
     });
   });
+}
+
+function debugLog(data: string) {
+  if (PRINTER_DEBUG === 'true') {
+    console.log(`Data returned:\n ${data}`);
+  } else {
+    console.log('Data returned.');
+  }
 }
 
 export {
