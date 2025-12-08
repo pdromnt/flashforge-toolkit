@@ -3,14 +3,14 @@
     <div class="card-body">
       <h2 class="card-title">Upload G-Code</h2>
 
-      <div class="form-control w-full">
+      <div v-if="!uploading" class="form-control w-full">
         <label class="label">
           <span class="label-text">Select file</span>
         </label>
         <input type="file" @change="onFileChange" accept=".gcode" class="file-input file-input-bordered w-full" />
       </div>
 
-      <div class="card-actions justify-end mt-4">
+      <div v-if="!status" class="card-actions justify-end mt-4">
         <button class="btn btn-primary" :disabled="!file || uploading" @click="startUpload">
           <span v-if="uploading" class="loading loading-spinner"></span>
           {{ uploading ? "Uploading..." : "Upload" }}
@@ -84,19 +84,25 @@ const startUpload = async () => {
             if (payload.done) {
               status.value = "Upload complete!";
               uploading.value = false;
+              progressPct.value = 0;
+
+              setTimeout(() => {
+                status.value = "";
+                file.value = null;
+              }, 3000);
             }
             if (payload.error) {
               status.value = "Error: " + payload.error;
               uploading.value = false;
+              progressPct.value = 0;
+
+              setTimeout(() => {
+                status.value = "";
+                file.value = null;
+              }, 3000);
             }
           } catch (e) {
             console.error("Error parsing JSON", e);
-          } finally {
-            setTimeout(() => {
-              status.value = "";
-              progressPct.value = 0;
-              file.value = null;
-            }, 10000);
           }
         }
       });
@@ -104,12 +110,6 @@ const startUpload = async () => {
   } catch (err: any) {
     status.value = "Upload failed: " + err.message;
     uploading.value = false;
-  } finally {
-    setTimeout(() => {
-      status.value = "";
-      progressPct.value = 0;
-      file.value = null;
-    }, 10000);
   }
 }
 </script>

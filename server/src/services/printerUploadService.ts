@@ -1,7 +1,9 @@
+
 import fs from 'fs';
-import { gxMetaParser } from '../utils/gxMetaParser';
-import { gxEncoder } from '../utils/gxEncoder';
-import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket';
+import { gxMetaParser } from '../utils/gxMetaParser.js';
+import { gxEncoder } from '../utils/gxEncoder.js';
+import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket.js';
+import { setNotification } from '../services/notificationStore.js';
 
 // Core upload logic
 async function uploadGcode({
@@ -11,6 +13,13 @@ async function uploadGcode({
   remoteFileName,
   startPrint,
   onProgress, // function(sentBytes, totalBytes)
+}: {
+  host: string;
+  port: number;
+  localFilePath: string;
+  remoteFileName: string;
+  startPrint: boolean;
+  onProgress: (sent: number, total: number) => void;
 }) {
   // Parse G-code to GX
   console.log(`[LOG] Parsing G-code into GX: ${localFilePath}`);
@@ -61,7 +70,12 @@ async function uploadGcode({
   }
 
   // 6) Run the queue
-  return client.runQueue();
+  await client.runQueue();
+
+  // Set notification for UI
+  setNotification('uploadComplete', { filename: gxRemoteFileName });
+
+  return true;
 }
 
 export { uploadGcode };

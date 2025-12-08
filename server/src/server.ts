@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import path from 'path';
 import { PRINTER_IP, PRINTER_PORT, SERVER_PORT } from './stores/configStore';
 import printerRoutes from './routes/printerRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use('/', express.static(path.join(__dirname, '../../client/dist')));
 
 // Routes
 app.use(printerRoutes);
+app.use(notificationRoutes);
 
 // Start the server
 app.listen(SERVER_PORT, () => {

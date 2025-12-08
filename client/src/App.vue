@@ -7,6 +7,7 @@ import WebcamPanel from './components/WebcamPanel.vue';
 import StatusPanel from './components/StatusPanel.vue';
 import PrinterUpload from './components/PrinterUpload.vue';
 import Footer from './components/Footer.vue';
+import NotificationToast from './components/NotificationToast.vue';
 import type { PrinterInfo } from './types/printerData';
 
 const connectionStatus = ref('Connecting...');
@@ -53,9 +54,6 @@ onMounted(() => {
       </div>
     </div>
     <Footer :info="printerInfo" />
+    <NotificationToast />
   </div>
 </template>
-
-<style>
-/* Global styles if needed, but prefer Tailwind utility classes */
-</style>

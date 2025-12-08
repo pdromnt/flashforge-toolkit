@@ -67,6 +67,13 @@ async function getPrinterInfo(): Promise<PrinterInfo> {
   };
 }
 
+async function startPrint(filename: string): Promise<string> {
+  // Command: ~M23 0:/user/filename.gx
+  const cmd = `~M23 0:/user/${filename}`;
+  const res = await executeSimpleCommand(cmd, /Result: ok|ok|Control Success|Start/i);
+  return res;
+}
+
 function debugLog(data: string) {
   if (PRINTER_DEBUG === 'true') {
     console.log(`[LOG] Data returned:\n ${data}`);
@@ -79,4 +86,5 @@ export {
   getPrintProgress,
   getExtruderTemperature,
   getPrinterInfo,
+  startPrint,
 };
