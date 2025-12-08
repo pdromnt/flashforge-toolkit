@@ -76,7 +76,7 @@ export class PrinterSocketClient {
         });
     }
 
-    _sendCommandAndWait(cmd: string, { expectRegex = /ok|Ready|READY|Start|Status|MachineStatus|Done|Finish/i, timeoutMs = 30000 } = {}) {
+    _sendCommandAndWait(cmd: string, { expectRegex = /ok|Ready|READY|Start|Status|MachineStatus|Done|Finish|Success|Control Success/i, timeoutMs = 30000 } = {}) {
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => reject(new Error(`Command timeout: ${cmd.trim()}`)), timeoutMs);
 

@@ -51,9 +51,13 @@ router.get('/status', async (_req: any, res: any) => {
 
 // Upload endpoint
 router.post(['/upload', '/api/files/local'], upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    res.status(400).send("No file uploaded");
+    return;
+  }
   const filePath = req.file.path;
   const remoteFileName = req.file.originalname;
-  const startPrint = req.body.print;
+  const startPrint = req.body.print === 'true' || req.body.print === true;
 
   console.log(`[LOG] Received file for upload: ${req.file.originalname} - ${new Date()}`);
 
@@ -74,14 +78,21 @@ router.post(['/upload', '/api/files/local'], upload.single('file'), async (req, 
         }
       }
     });
+
     console.log('[LOG] Upload complete.');
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-  } catch (err) {
+    res.end();
+  } catch (err: any) {
     res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+    res.end();
   } finally {
     // cleanup temp files
-    fs.unlinkSync(filePath + '.gx');
-    fs.unlinkSync(filePath);
+    try {
+      if (fs.existsSync(filePath + '.gx')) fs.unlinkSync(filePath + '.gx');
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch (e) {
+      console.error('[ERROR] Failed to cleanup temp files', e);
+    }
   }
 });
 

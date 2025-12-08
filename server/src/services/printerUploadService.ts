@@ -1,9 +1,10 @@
 
 import fs from 'fs';
-import { gxMetaParser } from '../utils/gxMetaParser.js';
-import { gxEncoder } from '../utils/gxEncoder.js';
-import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket.js';
-import { setNotification } from '../services/notificationStore.js';
+import { gxMetaParser } from '../utils/gxMetaParser';
+import { gxEncoder } from '../utils/gxEncoder';
+import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket';
+import { setNotification } from '../services/notificationStore';
+import { startPrint as startPrintCommand } from '../services/printerStatusService';
 
 // Core upload logic
 async function uploadGcode({
@@ -62,18 +63,24 @@ async function uploadGcode({
   // 4) Save file
   client.enqueueCmd(new SerialMessage("~M29\r\n", "command"));
 
-  // 5) Optional start print
-  if (startPrint) {
-    client.enqueueCmd(new SerialMessage(`~M23 0:/user/${gxRemoteFileName}\r\n`, "command"));
-  } else {
-    client.enqueueCmd(new SerialMessage("~M26\r\n", "command"));
-  }
+  // 5) End upload mode (always send M26 to close session cleanly)
+  client.enqueueCmd(new SerialMessage("~M26\r\n", "command"));
 
   // 6) Run the queue
   await client.runQueue();
 
-  // Set notification for UI
-  setNotification('uploadComplete', { filename: gxRemoteFileName });
+  // 7) Handle Post-Upload Actions
+  if (startPrint) {
+    console.log(`[LOG] Auto-starting print for: ${gxRemoteFileName}`);
+    try {
+      await startPrintCommand(gxRemoteFileName);
+    } catch (e) {
+      console.error(`[ERROR] Failed to auto-start print: ${e}`);
+    }
+  } else {
+    // Set notification for UI only if we didn't auto-start
+    setNotification('uploadComplete', { filename: gxRemoteFileName });
+  }
 
   return true;
 }
