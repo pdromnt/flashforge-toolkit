@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { getNotification, setNotification, clearNotification } from '../services/notificationStore';
 import { startPrint } from '../services/printerStatusService';
@@ -28,7 +27,6 @@ router.post('/notifications/response', async (req, res) => {
             clearNotification();
             res.json({ status: 'Print started' });
         } catch (err: any) {
-            // cast err to any or Error
             console.error(`[ERROR] Failed to start print: ${err}`);
             res.status(500).json({ error: 'Failed to start print' });
         }
