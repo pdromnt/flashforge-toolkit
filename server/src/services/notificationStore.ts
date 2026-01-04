@@ -1,4 +1,3 @@
-
 interface Notification {
     type: string;
     data: any;
@@ -19,7 +18,6 @@ export const setNotification = (type: string, data: any) => {
 export const getNotification = () => {
     if (!currentNotification) return null;
 
-    // Check timeout
     if (Date.now() - currentNotification.timestamp > NOTIFICATION_TIMEOUT_MS) {
         currentNotification = null;
         return null;
