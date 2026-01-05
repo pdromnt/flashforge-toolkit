@@ -30,6 +30,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { uploadFile } from '../services/uploadService';
 
 const file = ref<File | null>(null);
 const uploading = ref(false);
@@ -43,6 +44,11 @@ const onFileChange = (e: Event) => {
   }
 }
 
+const resetState = () => {
+  status.value = "";
+  file.value = null;
+}
+
 const startUpload = async () => {
   if (!file.value) return;
 
@@ -50,66 +56,23 @@ const startUpload = async () => {
   progressPct.value = 0;
   status.value = "";
 
-  // Create FormData
-  const formData = new FormData();
-  formData.append("file", file.value);
-
-  try {
-    // Start upload request
-    const response = await fetch("/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.body) {
-      throw new Error("No response body");
+  await uploadFile(
+    file.value,
+    (pct) => {
+      progressPct.value = pct;
+    },
+    () => {
+      status.value = "Upload complete!";
+      uploading.value = false;
+      progressPct.value = 0;
+      setTimeout(resetState, 3000);
+    },
+    (err) => {
+      status.value = "Upload failed: " + err;
+      uploading.value = false;
+      progressPct.value = 0;
+      setTimeout(resetState, 3000);
     }
-
-    // Listen to SSE stream
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      chunk.split("\n").forEach((line) => {
-        if (line.startsWith("data:")) {
-          try {
-            const payload = JSON.parse(line.replace("data: ", ""));
-            if (payload.pct) {
-              progressPct.value = parseFloat(payload.pct);
-            }
-            if (payload.done) {
-              status.value = "Upload complete!";
-              uploading.value = false;
-              progressPct.value = 0;
-
-              setTimeout(() => {
-                status.value = "";
-                file.value = null;
-              }, 3000);
-            }
-            if (payload.error) {
-              status.value = "Error: " + payload.error;
-              uploading.value = false;
-              progressPct.value = 0;
-
-              setTimeout(() => {
-                status.value = "";
-                file.value = null;
-              }, 3000);
-            }
-          } catch (e) {
-            console.error("Error parsing JSON", e);
-          }
-        }
-      });
-    }
-  } catch (err: any) {
-    status.value = "Upload failed: " + err.message;
-    uploading.value = false;
-  }
+  );
 }
 </script>
