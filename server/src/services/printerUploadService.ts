@@ -3,7 +3,7 @@ import fs from 'fs';
 import { gxMetaParser } from '../utils/gxMetaParser';
 import { gxEncoder } from '../utils/gxEncoder';
 import { PrinterSocketClient, SerialMessage } from '../utils/printerSocket';
-import { setNotification } from '../services/notificationStore';
+import { setNotification } from '../stores/notificationStore';
 import { startPrint as startPrintCommand } from '../services/printerStatusService';
 
 // Core upload logic
