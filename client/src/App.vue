@@ -40,7 +40,6 @@ onMounted(() => {
 <template>
   <div class="min-h-screen bg-base-200 flex flex-col">
     <div class="p-4 flex-grow">
-      <!-- Layout will go here -->
       <Navbar />
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
         <div class="lg:col-span-2">
