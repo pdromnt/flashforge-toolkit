@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { checkNotification as fetchNotification, sendResponse as postResponse, type Notification } from '../services/notificationService';
 
-const notification = ref<{ type: string; data: any; timestamp: number } | null>(null);
+const notification = ref<Notification | null>(null);
 
 const checkNotification = async () => {
     try {
-        const res = await fetch('/notifications');
-        if (res.ok) {
-            const data = await res.json();
+        const data = await fetchNotification();
+        if (data) {
             notification.value = data;
         }
     } catch (e) {
@@ -17,11 +17,7 @@ const checkNotification = async () => {
 
 const sendResponse = async (answer: 'yes' | 'no') => {
     try {
-        await fetch('/notifications/response', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ response: answer })
-        });
+        await postResponse(answer);
         notification.value = null; // Hide immediately
     } catch (e) {
         console.error('Failed to send response', e);
