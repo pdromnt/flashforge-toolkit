@@ -4,9 +4,15 @@
     "module": "commonjs",
     "strict": false,
     "esModuleInterop": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "types": ["node", "express", "multer", "jest"]
   },
   "include": [
     "src/**/*"
+  ],
+  "exclude": [
+    "src/__tests__",
+    "**/*.test.ts"
   ]
 }

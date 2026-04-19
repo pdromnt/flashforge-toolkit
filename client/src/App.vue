@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { getPrinterData } from './services/printerStatusService';
+import { onMounted, onUnmounted, ref } from 'vue';
+import { printerSocket } from './services/printerSocketService';
 
 import Navbar from './components/Navbar.vue';
 import WebcamPanel from './components/WebcamPanel.vue';
 import StatusPanel from './components/StatusPanel.vue';
 import PrinterUpload from './components/PrinterUpload.vue';
+import ConfigPanel from './components/ConfigPanel.vue';
 import Footer from './components/Footer.vue';
 import NotificationToast from './components/NotificationToast.vue';
-import type { PrinterInfo } from './types/printerData';
+import type { PrinterInfo, PrinterData } from './types/printerData';
 
 const connectionStatus = ref('Connecting...');
 const printerStatus = ref('Unknown');
@@ -16,24 +17,43 @@ const printProgress = ref(0);
 const extruderTemperature = ref('Unknown');
 const printerAddress = ref('');
 const printerInfo = ref<PrinterInfo | undefined>(undefined);
+const isSocketConnected = ref(false);
 
-const updateData = () => {
-  getPrinterData().then(res => {
-    connectionStatus.value = res.printerConnection;
-    printerStatus.value = res.printerStatus;
-    printProgress.value = res.printProgress;
-    extruderTemperature.value = res.extruderTemperature;
-    printerAddress.value = res.printerAddress;
-    printerInfo.value = res.printerInfo;
-  }).catch(() => {
-    connectionStatus.value = 'No response...';
-  });
+const updateData = (data: PrinterData) => {
+  connectionStatus.value = data.printerConnection || 'No response...';
+  printerStatus.value = data.printerStatus || 'Unknown';
+  printProgress.value = data.printProgress || 0;
+  extruderTemperature.value = data.extruderTemperature || 'Unknown';
+  printerAddress.value = data.printerAddress || '';
+  printerInfo.value = data.printerInfo;
 };
 
 onMounted(() => {
-  updateData();
+  // Set up socket event handlers
+  printerSocket.onStatus(updateData);
+  
+  printerSocket.onConnect(() => {
+    isSocketConnected.value = true;
+    console.log('[APP] Socket connected');
+  });
+  
+  printerSocket.onDisconnect((reason) => {
+    isSocketConnected.value = false;
+    console.log('[APP] Socket disconnected:', reason);
+    connectionStatus.value = 'Disconnected';
+  });
+  
+  printerSocket.onError((error) => {
+    console.error('[APP] Socket error:', error);
+    connectionStatus.value = 'Connection Error';
+  });
+  
+  // Connect to the server
+  printerSocket.connect();
+});
 
-  setInterval(updateData, 10 * 1000);
+onUnmounted(() => {
+  printerSocket.disconnect();
 });
 </script>
 
@@ -49,6 +69,7 @@ onMounted(() => {
           <StatusPanel :connection="connectionStatus" :status="printerStatus" :temp="extruderTemperature"
             :progress="printProgress" />
           <PrinterUpload class="mt-4" />
+          <ConfigPanel />
         </div>
       </div>
     </div>

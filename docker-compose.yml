@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  flashforge-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flashforge-dashboard
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PRINTER_IP=${PRINTER_IP:-192.168.1.100}
+      - PRINTER_PORT=${PRINTER_PORT:-8899}
+      - SERVER_PORT=3000
+      - PRINTER_DEBUG=${PRINTER_DEBUG:-false}
+    volumes:
+      # Persist configuration
+      - ./config:/app/config
+      # Persist uploads temporarily
+      - ./uploads:/app/uploads
+    networks:
+      - flashforge-network
+    # Required for the printer communication to work properly
+    # The container needs to be able to reach the printer on the network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  flashforge-network:
+    driver: bridge
