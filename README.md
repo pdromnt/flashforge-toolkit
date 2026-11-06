@@ -1,3 +1,7 @@
+# Deprecation Notice
+
+This project is to be deprecated in favor of a custom firmware. More info here: https://github.com/pdromnt/finder-revival
+
 # Flashforge Dashboard 
 
 ![Flashforge Dashboard](./client/src/assets/flashforge-dark.png)
